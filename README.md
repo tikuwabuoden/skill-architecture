@@ -19,6 +19,8 @@ Skillを次の3種類に分けます。
 |-- README.md
 |-- ARCHITECTURE.md
 `-- skills/
+    `-- implement-feature/
+        `-- SKILL.md
 ```
 
-現在はアーキテクチャの基盤のみを定義しており、具体的なSkillはまだ実装していません。
+最初の試作として、既存リポジトリへの機能追加を実装・検証まで進める `implement-feature` Workflowを収録しています。
