@@ -19,8 +19,14 @@ Skillを次の3種類に分けます。
 |-- README.md
 |-- ARCHITECTURE.md
 `-- skills/
-    `-- implement-feature/
-        `-- SKILL.md
+    |-- workflows/
+    |   `-- implement-feature/
+    |       `-- SKILL.md
+    |-- capabilities/
+    |   |-- analyze-codebase/
+    |   |-- plan-code-change/
+    |   `-- verify-code-change/
+    `-- adapters/
 ```
 
-最初の試作として、既存リポジトリへの機能追加を実装・検証まで進める `implement-feature` Workflowを収録しています。
+最初の試作として、既存リポジトリへの機能追加を進める `implement-feature` Workflowと、そこから利用する3つのCapabilityを収録しています。
