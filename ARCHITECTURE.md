@@ -10,9 +10,10 @@ flowchart TB
 
     W -->|組み合わせる| C
     W -->|接続先を選ぶ| A
+    C -.->|条件付きで利用| A
 ```
 
-矢印は処理の実行順ではなく、依存する方向を表す。Capability同士の再利用は許可するが、Capabilityから具体的なAdapterへの依存は禁止する。
+矢印は処理の実行順ではなく、依存する方向を表す。Capability同士の依存と、Adapterから他のSkillへの依存は禁止する。CapabilityからAdapterへの依存は、後述の条件をすべて満たす場合だけ許可する。
 
 ## Layers
 
@@ -29,11 +30,23 @@ skills/
 `-- adapters/
 ```
 
-WorkflowはCapabilityとAdapterへ依存できる。Capabilityは他のCapabilityへ依存できるが、Adapterへ依存してはならない。Adapterは他のSkillへ依存しない。循環依存は禁止する。
+WorkflowはCapabilityとAdapterへ依存できる。Capability同士の依存とWorkflow同士の依存は禁止する。CapabilityからAdapterへの依存は条件付きで許可する。Adapterは他のSkillへ依存しない。Capabilityの実行順と結果の受け渡しはWorkflowが管理する。循環依存は禁止する。
 
 ## Composition rules
 
 Codex Skill間に関数呼び出しを仮定しない。Workflowは利用するSkillを名前で示し、Codexが利用可能なSkillから選択する。
 
 - CapabilityはWorkflow経由でも直接でも起動できる。
-- Capabilityは特定ツールの操作方法を持たず、必要な操作と期待結果だけを表現する。
+- Capabilityは他のCapability名を参照しない。前段の結果が必要な場合は、生成元を限定せず必要な情報として受け取る。
+- CapabilityがAdapterへ依存する場合も、具体的なツール操作はAdapterへ委ねる。
+
+### CapabilityからAdapterへの依存
+
+次の条件をすべて満たす場合だけ許可する。
+
+1. Adapter利用がCapabilityの本質的な一部である。
+2. WorkflowごとにAdapterを差し替える必要がない。
+3. Adapterが処理順や業務判断を持たない。
+4. Capability名や責務が、外部技術への依存を隠していない。
+
+1つでも満たさない場合は、CapabilityからAdapterを参照せず、WorkflowがAdapterを選択する。
