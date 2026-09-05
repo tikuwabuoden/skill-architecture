@@ -19,6 +19,26 @@ description: 既存のソフトウェアリポジトリへ機能を追加また�
 
 Capabilityの責務をこのWorkflow内で重複して定義しない。必要なCapabilityが利用できない場合は、不足しているSkillを報告して停止する。
 
+## Flow
+
+```mermaid
+flowchart TD
+    R[要求と対象外を明確化]
+    A[analyze-codebase]
+    I[assess-change-impact]
+    P[plan-code-change]
+    M[implement-code-change]
+    V[verify-code-change]
+    U[ユーザーへ確認]
+    C[結果を統合して報告]
+
+    R --> A --> I --> P --> M --> V
+    V -->|verified| C
+    V -->|範囲内で修正可能| M
+    V -->|要求判断・範囲拡大| U
+    U -->|継続| I
+```
+
 ## Workflow
 
 1. 依頼から、実装後に満たす振る舞いと対象外を明確にする。結果を大きく変える判断だけをユーザーへ確認する。
@@ -26,7 +46,7 @@ Capabilityの責務をこのWorkflow内で重複して定義しない。必要�
 3. `assess-change-impact`を使い、要求された変更の波及範囲、互換性、必要な対応を確認する。
 4. `plan-code-change`を使い、要求、現状調査、影響評価から実装方針と検証方法を決める。
 5. `implement-code-change`を使い、計画に沿って一貫した変更を実装する。
-6. `verify-code-change`を使い、実装結果を検証する。範囲内の修正で解決できる問題は、検証結果を`implement-code-change`へ渡して修正し、再検証する。新しい要求判断や範囲拡大が必要ならユーザーへ確認する。
+6. `verify-code-change`を使い、実装結果を検証する。範囲内の修正で解決できる問題は、検証結果を`implement-code-change`へ渡して修正し、再検証する。新しい要求判断や範囲拡大が必要ならユーザーへ確認し、継続する場合は影響評価からやり直す。
 7. 各Capabilityの結果を統合し、実装結果と検証結果を報告する。
 
 ## Boundaries
