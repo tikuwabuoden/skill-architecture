@@ -14,6 +14,7 @@ description: 既存のソフトウェアリポジトリへ機能を追加また�
 - `analyze-codebase`
 - `assess-change-impact`
 - `plan-code-change`
+- `implement-code-change`
 - `verify-code-change`
 
 Capabilityの責務をこのWorkflow内で重複して定義しない。必要なCapabilityが利用できない場合は、不足しているSkillを報告して停止する。
@@ -24,8 +25,8 @@ Capabilityの責務をこのWorkflow内で重複して定義しない。必要�
 2. `analyze-codebase`を使い、現在の処理、責務、制約、関連テストを把握する。
 3. `assess-change-impact`を使い、要求された変更の波及範囲、互換性、必要な対応を確認する。
 4. `plan-code-change`を使い、要求、現状調査、影響評価から実装方針と検証方法を決める。
-5. 計画に沿って一貫した変更を実装する。無関係な変更や、要求されていない一般化を加えない。
-6. `verify-code-change`を使い、実装結果を検証する。範囲内の修正で解決できる問題は修正して再検証し、新しい要求判断や範囲拡大が必要ならユーザーへ確認する。
+5. `implement-code-change`を使い、計画に沿って一貫した変更を実装する。
+6. `verify-code-change`を使い、実装結果を検証する。範囲内の修正で解決できる問題は、検証結果を`implement-code-change`へ渡して修正し、再検証する。新しい要求判断や範囲拡大が必要ならユーザーへ確認する。
 7. 各Capabilityの結果を統合し、実装結果と検証結果を報告する。
 
 ## Boundaries

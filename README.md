@@ -25,9 +25,10 @@ Skillを次の3種類に分けます。
     |-- capabilities/
     |   |-- analyze-codebase/
     |   |-- assess-change-impact/
+    |   |-- implement-code-change/
     |   |-- plan-code-change/
     |   `-- verify-code-change/
     `-- adapters/
 ```
 
-最初の試作として、既存リポジトリへの機能追加を進める `implement-feature` Workflowと、そこから利用する4つのCapabilityを収録しています。
+最初の試作として、既存リポジトリへの機能追加を進める `implement-feature` Workflowと、そこから利用する5つのCapabilityを収録しています。
