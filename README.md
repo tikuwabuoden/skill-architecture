@@ -20,6 +20,8 @@ Skillを次の3種類に分けます。
 |-- ARCHITECTURE.md
 `-- skills/
     |-- workflows/
+    |   |-- fix-bug/
+    |   |   `-- SKILL.md
     |   `-- implement-feature/
     |       `-- SKILL.md
     |-- capabilities/
@@ -31,4 +33,4 @@ Skillを次の3種類に分けます。
     `-- adapters/
 ```
 
-最初の試作として、既存リポジトリへの機能追加を進める `implement-feature` Workflowと、そこから利用する5つのCapabilityを収録しています。
+既存リポジトリへの機能追加を進める `implement-feature` Workflow、バグ修正を進める `fix-bug` Workflowと、両者から利用する5つのCapabilityを収録しています。
