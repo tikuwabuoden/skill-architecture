@@ -7,17 +7,19 @@ description: 既存のソフトウェアリポジトリの不具合を、再現�
 
 報告された不具合とコードの根拠を結び付け、期待する振る舞いを回復し、修正を確認可能な状態まで進める。
 
-## Capabilities
+## Internal Skills
 
-次のCapabilityを利用可能なSkill一覧から読み込み、各Capabilityの指示に従う。
+このWorkflowの`SKILL.md`を含むディレクトリがsymlinkまたはJunctionの場合は、最初にリンク先の実体ディレクトリを解決する。`~/.agents/skills/fix-bug`などの見かけのパスに対して`..`を解決しない。
 
-- `analyze-codebase`
-- `assess-change-impact`
-- `plan-code-change`
-- `implement-code-change`
-- `verify-code-change`
+実体ディレクトリを基準に、次の内部Capabilityを最後まで読み、各指示に従う。
 
-Capabilityの責務をこのWorkflow内で重複して定義しない。必要なCapabilityが利用できない場合は、不足しているSkillを報告して停止する。
+- `../../capabilities/analyze-codebase/SKILL.md`
+- `../../capabilities/assess-change-impact/SKILL.md`
+- `../../capabilities/plan-code-change/SKILL.md`
+- `../../capabilities/implement-code-change/SKILL.md`
+- `../../capabilities/verify-code-change/SKILL.md`
+
+同名のSkillをCodexのSkill一覧から探したり、ユーザー向けSkillとして起動したりしない。Capabilityの責務をこのWorkflow内で重複して定義しない。必要なファイルが存在しない、または読めない場合は、そのパスを報告して停止する。
 
 ## Flow
 
