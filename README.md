@@ -20,6 +20,8 @@ Skillを次の3種類に分けます。
 |-- ARCHITECTURE.md
 `-- skills/
     |-- workflows/
+    |   |-- explain-implementation/
+    |   |   `-- SKILL.md
     |   |-- fix-bug/
     |   |   `-- SKILL.md
     |   `-- implement-feature/
@@ -31,6 +33,8 @@ Skillを次の3種類に分けます。
     |   |-- plan-code-change/
     |   `-- verify-code-change/
     `-- adapters/
+        `-- render-archify-diagram/
+            `-- SKILL.md
 ```
 
-既存リポジトリへの機能追加を進める `implement-feature` Workflow、バグ修正を進める `fix-bug` Workflowと、両者から利用する5つのCapabilityを収録しています。
+機能追加の `implement-feature`、バグ修正の `fix-bug`、現状説明の `explain-implementation` Workflowと、5つのCapabilityを収録しています。現状説明は文章を基本とし、図解を添える場合は `render-archify-diagram` Adapterからインストール済みのArchify CLIを利用します。Archify本体はこのリポジトリに同梱しません。
