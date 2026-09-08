@@ -1,9 +1,11 @@
 ---
 name: render-archify-diagram
-description: インストール済みArchify CLIを使い、指定された仕様JSONをHTML図へ描画・検証して成果物と診断を返す。図の内容と出力条件が決まっているときに使う。コード調査、説明内容の選択、図の意味の設計には使わない。
+description: Workflowから受け取った仕様JSONを、インストール済みArchify CLIでHTML図へ描画・検証し、成果物と診断を返す内部Adapter。ユーザーから直接呼び出さない。
 ---
 
 # Render Archify Diagram
+
+このAdapterはWorkflowが内部Skillとして読み込んで使う。CodexのSkill探索対象へインストールせず、ユーザーの依頼から直接起動しない。
 
 外部ツールのArchify CLIへの入出力を扱う。他のSkillを読み込んだり呼び出したりしない。
 

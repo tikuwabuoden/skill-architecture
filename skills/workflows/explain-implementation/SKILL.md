@@ -7,12 +7,19 @@ description: 既存リポジトリの実装を読み、現在の仕組み、処�
 
 現在の実装がどう動くかを、ユーザーの知りたい範囲と理解度に合わせて説明する。
 
-## Skills
+## Internal Skills
 
-- `analyze-codebase`: 現在の実装を調査する必須Capability。
-- `render-archify-diagram`: HTML図解を生成するときだけ使うAdapter。
+このWorkflowの`SKILL.md`を含むディレクトリがsymlinkまたはJunctionの場合は、最初にリンク先の実体ディレクトリを解決する。`~/.agents/skills/explain-implementation`などの見かけのパスに対して`..`を解決しない。
 
-利用するSkillを利用可能な一覧から読み込む。必須Capabilityがなければ不足を報告して停止する。Adapterが利用できない場合の扱いはWorkflowで判断する。
+実体ディレクトリを基準に、現在の実装を調査する前に次の内部Capabilityを最後まで読む。
+
+- `../../capabilities/analyze-codebase/SKILL.md`
+
+HTML図解を生成すると判断した場合だけ、実行前に次の内部Adapterを最後まで読む。
+
+- `../../adapters/render-archify-diagram/SKILL.md`
+
+同名のSkillをCodexのSkill一覧から探したり、ユーザー向けSkillとして起動したりしない。必須Capabilityが存在しない、または読めない場合は、そのパスを報告して停止する。Adapterが読めない場合の扱いはWorkflowで判断する。
 
 ## Flow
 

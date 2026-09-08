@@ -38,3 +38,31 @@ Skillを次の3種類に分けます。
 ```
 
 機能追加の `implement-feature`、バグ修正の `fix-bug`、現状説明の `explain-implementation` Workflowと、5つのCapabilityを収録しています。現状説明は文章を基本とし、図解を添える場合は `render-archify-diagram` Adapterからインストール済みのArchify CLIを利用します。Archify本体はこのリポジトリに同梱しません。
+
+## Install
+
+次のスクリプトは、リポジトリ内のWorkflowだけをユーザー共通の `~/.agents/skills` へリンクします。CapabilityとAdapterはCodexのSkill探索対象へ追加しません。
+
+Windows:
+
+```powershell
+./scripts/install-workflows.ps1
+```
+
+macOS / Linux:
+
+```sh
+./scripts/install-workflows.sh
+```
+
+リンク先を変える場合は、Windowsでは `-Destination`、macOS / Linuxでは `--destination` を指定します。インストール後にSkillが表示されない場合はCodexを再起動し、`/skills`で確認してください。
+
+作成したリンクを削除する場合は次を実行します。他のSkillや通常のディレクトリは削除しません。
+
+```powershell
+./scripts/install-workflows.ps1 -Uninstall
+```
+
+```sh
+./scripts/install-workflows.sh --uninstall
+```
