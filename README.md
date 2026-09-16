@@ -31,13 +31,35 @@ Skillを次の3種類に分けます。
     |   |-- assess-change-impact/
     |   |-- implement-code-change/
     |   |-- plan-code-change/
+    |   |-- render-markdown/
     |   `-- verify-code-change/
     `-- adapters/
         `-- render-archify-diagram/
             `-- SKILL.md
 ```
 
-機能追加の `implement-feature`、バグ修正の `fix-bug`、現状説明の `explain-implementation` Workflowと、5つのCapabilityを収録しています。現状説明は文章を基本とし、図解を添える場合は `render-archify-diagram` Adapterからインストール済みのArchify CLIを利用します。Archify本体はこのリポジトリに同梱しません。
+## Included skills
+
+### Workflow
+
+- `implement-feature`: 要求の具体化から実装と検証まで、機能追加の一連の作業を進める
+- `fix-bug`: 不具合の再現と原因調査から修正、回帰検証までを進める
+- `explain-implementation`: 既存コードを調査し、現在の仕組みと処理の流れを根拠付きで説明する
+
+### Capability
+
+- `analyze-codebase`: 実装経路、制約、既存パターン、関連テストを調査する
+- `assess-change-impact`: コード変更がインターフェース、データ、設定、テスト、文書、運用へ与える影響を調査する
+- `plan-code-change`: 要求と調査結果から、実装方針、機能単位の実施順、検証方法を決める
+- `render-markdown`: JSONを指定されたスキーマで検証し、テンプレートから再現可能なMarkdownを生成する
+- `implement-code-change`: 合意済みの方針に基づいて、コード、テスト、文書へ変更を適用する
+- `verify-code-change`: 実装結果について、要求の充足、意図しない差分、回帰の有無を検証する
+
+### Adapter
+
+- `render-archify-diagram`: 仕様JSONをインストール済みのArchify CLIでHTML図へ変換し、成果物と診断を返す
+
+Archify本体はこのリポジトリに同梱しません。
 
 ## Install
 
