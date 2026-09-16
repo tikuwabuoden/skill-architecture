@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Implementation plan input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "title",
+    "behavior",
+    "outOfScope",
+    "approach",
+    "implementationUnits",
+    "responsibilities",
+    "flowDiagram",
+    "interfaceImpacts",
+    "constraints",
+    "verification",
+    "risks"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!.*[\\r\\n])(?=.*\\S).+$"
+    },
+    "behavior": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!.*[\\r\\n])(?=.*\\S).+$"
+      }
+    },
+    "outOfScope": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!.*[\\r\\n])(?=.*\\S).+$"
+      }
+    },
+    "approach": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!.*[\\r\\n])(?=.*\\S).+$"
+      }
+    },
+    "implementationUnits": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "outcome", "changes", "dependsOn", "verification"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!.*[\\r\\n])(?=.*\\S).+$"
+          },
+          "outcome": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!.*[\\r\\n])(?=.*\\S).+$"
+          },
+          "changes": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?!.*[\\r\\n])(?=.*\\S).+$"
+            }
+          },
+          "dependsOn": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?!.*[\\r\\n])(?=.*\\S).+$"
+            }
+          },
+          "verification": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?!.*[\\r\\n])(?=.*\\S).+$"
+            }
+          }
+        }
+      }
+    },
+    "responsibilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!.*[\\r\\n])(?=.*\\S).+$"
+      }
+    },
+    "flowDiagram": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "source"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["mermaid"]
+            },
+            "source": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?![\\s\\S]*```)(?=[\\s\\S]*\\S)[\\s\\S]+$"
+            }
+          }
+        }
+      ]
+    },
+    "interfaceImpacts": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!.*[\\r\\n])(?=.*\\S).+$"
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!.*[\\r\\n])(?=.*\\S).+$"
+      }
+    },
+    "verification": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!.*[\\r\\n])(?=.*\\S).+$"
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!.*[\\r\\n])(?=.*\\S).+$"
+      }
+    }
+  }
+}
