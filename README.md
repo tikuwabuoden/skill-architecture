@@ -20,6 +20,8 @@ Skillを次の3種類に分けます。
 |-- ARCHITECTURE.md
 `-- skills/
     |-- workflows/
+    |   |-- create-github-issue/
+    |   |   `-- SKILL.md
     |   |-- explain-implementation/
     |   |   `-- SKILL.md
     |   |-- fix-bug/
@@ -29,11 +31,14 @@ Skillを次の3種類に分けます。
     |-- capabilities/
     |   |-- analyze-codebase/
     |   |-- assess-change-impact/
+    |   |-- draft-issue/
     |   |-- implement-code-change/
     |   |-- plan-code-change/
     |   |-- render-markdown/
     |   `-- verify-code-change/
     `-- adapters/
+        |-- github-issues-gh/
+        |   `-- SKILL.md
         `-- render-archify-diagram/
             `-- SKILL.md
 ```
@@ -42,12 +47,14 @@ Skillを次の3種類に分けます。
 
 ### Workflow
 
+- `create-github-issue`: 読み取り、Issue本文の生成、重複確認、明示承認を経てGitHub Issueを1件作成する
 - `implement-feature`: 要求の具体化から実装と検証まで、機能追加の一連の作業を進める
 - `fix-bug`: 不具合の再現と原因調査から修正、回帰検証までを進める
 - `explain-implementation`: 既存コードを調査し、現在の仕組みと処理の流れを根拠付きで説明する
 
 ### Capability
 
+- `draft-issue`: ユーザーの意図、根拠、リポジトリ規約から開発Issueの型付きデータを作る
 - `analyze-codebase`: 実装経路、制約、既存パターン、関連テストを調査する
 - `assess-change-impact`: コード変更がインターフェース、データ、設定、テスト、文書、運用へ与える影響を調査する
 - `plan-code-change`: 要求と調査結果から、実装方針、機能単位の実施順、検証方法を決める
@@ -57,6 +64,7 @@ Skillを次の3種類に分けます。
 
 ### Adapter
 
+- `github-issues-gh`: インストール済みGitHub CLIでリポジトリ、ラベル、Issue候補を読み取り、承認済みのIssueを1件作成する
 - `render-archify-diagram`: 仕様JSONをインストール済みのArchify CLIでHTML図へ変換し、成果物と診断を返す
 
 Archify本体はこのリポジトリに同梱しません。
