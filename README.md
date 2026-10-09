@@ -69,6 +69,14 @@ Skillを次の3種類に分けます。
 
 Archify本体はこのリポジトリに同梱しません。
 
+## Intermediate JSON
+
+Skill間の受け渡しや文書・図の変換に使う中間JSONは、一時ファイルも含めディスクへ保存しません。メモリ上で保持し、コマンドにはUTF-8の標準入力で渡します。MarkdownやHTMLなどの成果物は保存できます。既存のSchemaや設定、固定のテスト資産、依頼された実装の一部となるJSONファイルはこの制約の対象外です。
+
+`render-markdown`のデータ入力は`--data -`のみ対応します。従来のJSONファイル入力は使用できません。
+
+`render-archify-diagram`は、標準入力に対応し、内部でも中間JSONを保存しないArchifyだけを使用します。現在確認しているArchifyはファイル入力と内部の仕様JSONコピーが必要なため、HTML図解を生成できません。`explain-implementation`はその理由と文章説明を返し、図解が必須の場合は未完了として報告します。
+
 ## Install
 
 次のスクリプトは、リポジトリ内のWorkflowだけをユーザー共通の `~/.agents/skills` へリンクします。CapabilityとAdapterはCodexのSkill探索対象へ追加しません。
