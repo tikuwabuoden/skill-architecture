@@ -40,9 +40,7 @@ class DevelopmentIssueRenderingTest(unittest.TestCase):
     ) -> tuple[subprocess.CompletedProcess[bytes], Path, tempfile.TemporaryDirectory[str]]:
         temporary = tempfile.TemporaryDirectory()
         root = Path(temporary.name)
-        data_path = root / "issue.json"
         output_path = root / "issue.md"
-        data_path.write_text(json.dumps(issue, ensure_ascii=False), encoding="utf-8")
         result = subprocess.run(
             [
                 sys.executable,
@@ -52,13 +50,16 @@ class DevelopmentIssueRenderingTest(unittest.TestCase):
                 "--template",
                 str(TEMPLATE),
                 "--data",
-                str(data_path),
+                "-",
                 "--output",
                 str(output_path),
             ],
+            input=json.dumps(issue, ensure_ascii=False).encode("utf-8"),
+            cwd=root,
             capture_output=True,
             check=False,
         )
+        self.assertEqual(set(root.iterdir()), {output_path} if result.returncode == 0 else set())
         return result, output_path, temporary
 
     def test_workflow_resources_render_complete_issue(self) -> None:

@@ -13,11 +13,11 @@ Workflowが所有するスキーマ、テンプレート、構造化データを
 
 - UTF-8のJSON Schemaファイル
 - UTF-8のMarkdownテンプレート
-- スキーマを満たすJSONデータ。JSONファイルまたは標準入力で渡せる
+- スキーマを満たすJSONデータ。UTF-8の標準入力で渡す
 - Markdownの出力先。後続処理へ本文を渡す場合は標準出力を指定できる
 - 既存ファイルを置換する場合は、その操作が依頼範囲に含まれること
 
-スキーマ、テンプレート、データ内容、出力先、生成するタイミングは呼び出し元が決める。呼び出し元に永続的なJSONファイルの作成を要求しない。
+スキーマ、テンプレート、データ内容、出力先、生成するタイミングは呼び出し元が決める。入力JSONはメモリ上で扱い、一時ファイルを含めディスクへ保存しない。
 
 使用できるスキーマキーワードとテンプレート構文は、実行時に[references/template-syntax.md](references/template-syntax.md)を最後まで読む。
 
@@ -29,13 +29,13 @@ Workflowが所有するスキーマ、テンプレート、構造化データを
 4. 入力、スキーマ、テンプレートの診断が返った場合は出力を採用せず、呼び出し元が修正できる診断を返す。同じ入力による再実行を繰り返さない。
 5. 出力先が既存ファイルの場合は、置換が依頼範囲に含まれるときだけ`--overwrite`を使う。そうでなければ停止して出力先の変更または置換の判断を返す。
 
-JSONファイルを使う場合:
+JSONをUTF-8の標準入力へ直接渡して実行する:
 
 ```text
-python scripts/render_markdown.py --schema <schema.json> --template <template.md> --data <values.json> --output <result.md>
+python scripts/render_markdown.py --schema <schema.json> --template <template.md> --data - --output <result.md>
 ```
 
-JSONを標準入力から渡す場合は`--data -`、後続処理へMarkdown本文を渡す場合は`--output -`を使う。
+`--data`は`-`だけを受け付ける。呼び出し元はファイルリダイレクトではなく、メモリ上のJSONをプロセスの標準入力へ書き込む。後続処理へMarkdown本文を渡す場合は`--output -`を使う。
 
 ## Boundaries
 
