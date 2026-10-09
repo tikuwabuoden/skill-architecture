@@ -302,7 +302,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--schema", required=True, type=Path)
     parser.add_argument("--template", required=True, type=Path)
-    parser.add_argument("--data", required=True, help="JSON data path or '-' for stdin")
+    parser.add_argument("--data", required=True, choices=["-"], help="UTF-8 JSON from stdin only")
     parser.add_argument("--output", required=True, help="Markdown path or '-' for stdout")
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args(argv)
@@ -314,8 +314,7 @@ def main(argv: list[str] | None = None) -> int:
     template_path = args.template.resolve()
     try:
         schema = validate_schema_definition(load_json(schema_path, str(schema_path), "schema"))
-        data_path = None if args.data == "-" else Path(args.data).resolve()
-        data = load_json(data_path, args.data, "JSON data")
+        data = load_json(None, "-", "JSON data")
         validate(data, schema)
         template = template_path.read_text(encoding="utf-8")
         result = render_nodes(parse_template(template), Context(data)).rstrip("\n") + "\n"

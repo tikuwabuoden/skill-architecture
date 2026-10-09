@@ -52,7 +52,7 @@ flowchart TD
 2. `analyze-codebase`を使い、現在の処理、責務、制約、関連テストを把握する。
 3. `assess-change-impact`を使い、要求された変更の波及範囲、互換性、必要な対応を確認する。
 4. `plan-code-change`を使い、要求、現状調査、影響評価から実装方針と検証方法を決める。
-5. ユーザーが実装計画のMarkdownファイルを求めている場合は、`assets/implementation-plan/schema.json`を読み、`plan-code-change`の結果を入力契約へ対応付けたJSONを用意する。`render-markdown`へそのスキーマ、`assets/implementation-plan/template.md`、JSON、出力先を渡す。出力先はユーザーの指定またはリポジトリの既存規約から決め、計画ファイルを変更対象に含める。既存ファイルの置換が依頼範囲に含まれない場合は置換しない。
+5. ユーザーが実装計画のMarkdownファイルを求めている場合は、`assets/implementation-plan/schema.json`を読み、`plan-code-change`の結果を入力契約へ対応付けたJSONをメモリ上で用意する。`render-markdown`へそのスキーマ、`assets/implementation-plan/template.md`、出力先を指定し、JSONはUTF-8の標準入力で渡す（`--data -`）。一時ファイルを含め計画JSONをディスクへ保存しない。出力先はユーザーの指定またはリポジトリの既存規約から決め、計画ファイルを変更対象に含める。既存ファイルの置換が依頼範囲に含まれない場合は置換しない。
 6. `implement-code-change`を使い、計画に沿って一貫した変更を実装する。
 7. `verify-code-change`を使い、実装結果を検証する。範囲内の修正で解決できる問題は、検証結果を`implement-code-change`へ渡して修正し、再検証する。新しい要求判断や範囲拡大が必要ならユーザーへ確認し、継続する場合は影響評価からやり直す。
 8. 各Capabilityの結果を統合し、実装結果と検証結果を報告する。計画書を生成した場合は、その出力先も示す。
