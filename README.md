@@ -61,6 +61,38 @@ Skillを次の3種類に分けます。
 
 Archify本体はこのリポジトリに同梱しません。
 
+## Naming policy
+
+共通の命名規約設定と利用先設定を分離し、設定からコミット件名・PRタイトル・ブランチ名の規約文書を生成します。設定方法と生成手順は[policy/README.md](policy/README.md)、このリポジトリ向けの生成文書は[policy/NAMING.md](policy/NAMING.md)を参照してください。
+
+Python 3.10以上が必要です。利用先リポジトリのルートで次を実行します。
+
+macOS / Linux:
+
+```sh
+sh ../skill-architecture/scripts/install-policy.sh --project .
+```
+
+Windows:
+
+```powershell
+../skill-architecture/scripts/install-policy.ps1 -Project .
+```
+
+パスは命名規約リポジトリをcloneした場所に合わせてください。既定ではGitの`commit-msg` hook、共通設定、利用先設定例、生成文書、PRのCIを導入し、`AGENTS.md`へ生成文書の参照を追加します。利用先のscope設定は`policy/local.json`で編集します。共通設定の変更を取り込む場合は、clone先を更新してinstallを再実行します。利用先の設定と既存hookは引き継ぎます。
+
+Claude Codeの`PreToolUse` hookは任意です。Claude Code 2.1.295以降で次を指定します。
+
+```sh
+sh ../skill-architecture/scripts/install-policy.sh --project . --agent-hook claude
+```
+
+```powershell
+../skill-architecture/scripts/install-policy.ps1 -Project . -ClaudeHook
+```
+
+解除時は利用先リポジトリで`--uninstall`または`-Uninstall`を付けます。導入したmanagedファイルを利用先で編集した場合は、それを保持して解除を止めます。ファイルを退避してから解除してください。GitHubの必須チェック設定は別途管理者が設定します。
+
 ## Install
 
 次のスクリプトは、リポジトリ内のWorkflowだけをユーザー共通の `~/.agents/skills` へリンクします。CapabilityとAdapterはCodexのSkill探索対象へ追加しません。
