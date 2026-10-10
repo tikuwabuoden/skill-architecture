@@ -2,7 +2,8 @@
 param(
     [string]$Project = (Get-Location).Path,
     [switch]$Uninstall,
-    [switch]$ClaudeHook
+    [switch]$ClaudeHook,
+    [switch]$CodexHook
 )
 
 $ErrorActionPreference = 'Stop'
@@ -23,6 +24,9 @@ if ($Uninstall) {
 }
 if ($ClaudeHook) {
     $pythonArguments += @('--agent-hook', 'claude')
+}
+if ($CodexHook) {
+    $pythonArguments += @('--agent-hook', 'codex')
 }
 & $pythonCommand.Source @pythonArguments
 exit $LASTEXITCODE

@@ -2,7 +2,7 @@
 
 機械で検証できる規則は`shared.json`を正本とし、利用先の設定は`local.json`に分離します。`NAMING.md`は設定から生成するagent・人向けの文書です。直接編集せず、設定を変更して再生成してください。
 
-Workflow用Skillのinstallと規約のinstallは別々です。規約のinstallは対象のGitリポジトリに設定、生成文書、Git hook、PR用CIを追加します。Claude Code hookは任意です。
+Workflow用Skillのinstallと規約のinstallは別々です。規約のinstallは対象のGitリポジトリに設定、生成文書、Git hook、PR用CIを追加します。Claude CodeとCodexの`PreToolUse` hookは任意です。
 
 ## ファイルと責務
 
@@ -43,6 +43,8 @@ Python 3.10以上とGitを使い、規約を導入するGitリポジトリを指
 ```sh
 sh ../skill-architecture/scripts/install-policy.sh --project /path/to/project
 sh ../skill-architecture/scripts/install-policy.sh --project /path/to/project --agent-hook claude
+sh ../skill-architecture/scripts/install-policy.sh --project /path/to/project --agent-hook codex
+sh ../skill-architecture/scripts/install-policy.sh --project /path/to/project --agent-hook claude --agent-hook codex
 sh ../skill-architecture/scripts/install-policy.sh --project /path/to/project --uninstall
 ```
 
@@ -51,18 +53,20 @@ WindowsではPowerShell版を使います。
 ```powershell
 ../skill-architecture/scripts/install-policy.ps1 -Project C:\path\to\project
 ../skill-architecture/scripts/install-policy.ps1 -Project C:\path\to\project -ClaudeHook
+../skill-architecture/scripts/install-policy.ps1 -Project C:\path\to\project -CodexHook
+../skill-architecture/scripts/install-policy.ps1 -Project C:\path\to\project -ClaudeHook -CodexHook
 ../skill-architecture/scripts/install-policy.ps1 -Project C:\path\to\project -Uninstall
 ```
 
 targetに既存の`policy/local.json`があれば保持します。ない場合は`local.example.json`を初期設定としてコピーします。共通設定、生成文書、スクリプト、workflow、`AGENTS.md`の管理参照はinstall manifestに記録します。再installでは利用先設定を使って文書を生成し、共通ファイルだけを更新します。
 
-既存のGit `commit-msg` hookがあればバックアップして呼び出しを維持します。hook失敗時は命名規約の検証を続けずコミットを拒否します。`core.hooksPath`がリポジトリとGitディレクトリの外を指す場合、安全に解除できないためinstallを拒否します。既存のClaude設定はJSONとして読み、ほかのキーとhookを保って任意の`PreToolUse` entryを追加します。
+既存のGit `commit-msg` hookがあればバックアップして呼び出しを維持します。hook失敗時は命名規約の検証を続けずコミットを拒否します。`core.hooksPath`がリポジトリとGitディレクトリの外を指す場合、安全に解除できないためinstallを拒否します。既存のClaude設定とCodexの`.codex/hooks.json`はJSONとして読み、ほかのキーとhookを保って任意の`PreToolUse` entryを追加します。Codexのproject hookは、Codexで信頼確認してから実行されます。
 
 uninstallは、このinstallが管理し変更されていないファイルだけを解除します。利用先で管理ファイルが編集または削除されている場合は、何も部分削除せず理由を返します。利用先固有の`policy/local.json`は常に保護し、install時に作った初期設定は未編集なら解除します。既存hookはinstall中の編集も含めて元の位置へ戻します。
 
 CIではPR作成・更新・タイトルまたは本文の編集時に、PR内のコミット件名とPRメタデータを検証します。branch由来のissue番号はタイトルと本文で一致を求め、過去コミットのissue番号は現在のbranch番号へ変更しません。検証はローカルのclone先パスに依存せず、GitHub Actionsから呼び出します。必須チェックの設定はGitHub管理者が行います。
 
-agent hookの初期対応は`git switch -c NAME [START_POINT]`、`git checkout -b NAME [START_POINT]`、`gh pr create`の明示的なタイトルと本文または本文ファイルです。シェルの複合コマンド、展開、対話形式、未対応の引数、必要な値を取得できない形式は理由を付けて拒否します。他製品や別操作のhook対応は、対象エージェントの入出力に合わせて追加します。
+Claude CodeとCodexのagent hookは、`git switch -c NAME [START_POINT]`、`git checkout -b NAME [START_POINT]`、`gh pr create`の明示的なタイトルと本文または本文ファイルを実行前に検証します。シェルの複合コマンド、展開、対話形式、未対応の引数、必要な値を取得できない形式は理由を付けて拒否します。
 
 ## 利用先設定
 

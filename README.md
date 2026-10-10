@@ -81,15 +81,21 @@ Windows:
 
 パスは命名規約リポジトリをcloneした場所に合わせてください。既定ではGitの`commit-msg` hook、共通設定、利用先設定例、生成文書、PRのCIを導入し、`AGENTS.md`へ生成文書の参照を追加します。利用先のscope設定は`policy/local.json`で編集します。共通設定の変更を取り込む場合は、clone先を更新してinstallを再実行します。利用先の設定と既存hookは引き継ぎます。
 
-Claude Codeの`PreToolUse` hookは任意です。Claude Code 2.1.295以降で次を指定します。
+Claude CodeとCodexの`PreToolUse` hookは任意です。ポリシーに関わるBashコマンドを実行前に同じ判定ロジックで検証・補完します。
 
 ```sh
 sh ../skill-architecture/scripts/install-policy.sh --project . --agent-hook claude
+sh ../skill-architecture/scripts/install-policy.sh --project . --agent-hook codex
+sh ../skill-architecture/scripts/install-policy.sh --project . --agent-hook claude --agent-hook codex
 ```
 
 ```powershell
 ../skill-architecture/scripts/install-policy.ps1 -Project . -ClaudeHook
+../skill-architecture/scripts/install-policy.ps1 -Project . -CodexHook
+../skill-architecture/scripts/install-policy.ps1 -Project . -ClaudeHook -CodexHook
 ```
+
+Codexのproject hookは初回に信頼確認が必要です。Codexで`/hooks`を開き、導入した命名規約hookを確認して信頼してください。
 
 解除時は利用先リポジトリで`--uninstall`または`-Uninstall`を付けます。導入したmanagedファイルを利用先で編集した場合は、それを保持して解除を止めます。ファイルを退避してから解除してください。GitHubの必須チェック設定は別途管理者が設定します。
 

@@ -12,7 +12,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts" / "policy"))
-from install import MANIFEST_NAME, _active_hooks_dir, _install, _uninstall
+from install import MANIFEST_NAME, _active_hooks_dir, _install, _uninstall, main
 from policy import PolicyError
 
 
@@ -46,8 +46,8 @@ class PolicyInstallTest(unittest.TestCase):
             git_dir = self.root / git_dir
         return git_dir / MANIFEST_NAME
 
-    def install(self, *, claude=False):
-        _install(self.root, ROOT, claude=claude)
+    def install(self, *, claude=False, codex=False):
+        _install(self.root, ROOT, claude=claude, codex=codex)
 
     def test_install_generates_documents_and_adds_only_a_managed_agent_reference(self):
         original = "# Project rules\n\nKeep existing guidance.\n"
@@ -185,6 +185,68 @@ class PolicyInstallTest(unittest.TestCase):
             self.install(claude=True)
         self.assertEqual(settings_path.read_text(encoding="utf-8"), "{invalid")
         self.assertFalse(self.manifest_path.exists())
+
+    def test_optional_codex_hook_merges_and_uninstalls_without_losing_other_settings(self):
+        hooks_path = self.root / ".codex" / "hooks.json"
+        hooks_path.parent.mkdir()
+        original = {
+            "description": "User hooks",
+            "hooks": {"PreToolUse": [{"matcher": "^apply_patch$", "hooks": [
+                {"type": "command", "command": "custom-check"}]}],
+                "SessionStart": [{"hooks": [{"type": "command", "command": "startup"}]}]},
+        }
+        hooks_path.write_text(json.dumps(original), encoding="utf-8")
+        self.install(codex=True)
+        installed = json.loads(hooks_path.read_text(encoding="utf-8"))
+        groups = installed["hooks"]["PreToolUse"]
+        self.assertEqual(groups[0], original["hooks"]["PreToolUse"][0])
+        self.assertEqual(len(groups), 2)
+        self.assertEqual(groups[1]["matcher"], "^Bash$")
+        self.assertIn("commandWindows", groups[1]["hooks"][0])
+        self.assertIn("--codex", groups[1]["hooks"][0]["command"])
+        _uninstall(self.root)
+        self.assertEqual(json.loads(hooks_path.read_text(encoding="utf-8")), original)
+
+    def test_codex_hook_is_opt_in_and_created_config_is_removed_on_uninstall(self):
+        self.install()
+        self.assertFalse((self.root / ".codex" / "hooks.json").exists())
+        _uninstall(self.root)
+        self.install(codex=True)
+        self.install(codex=True)
+        self.assertTrue((self.root / ".codex" / "hooks.json").is_file())
+        _uninstall(self.root)
+        self.assertFalse((self.root / ".codex" / "hooks.json").exists())
+
+    def test_malformed_codex_hooks_are_protected(self):
+        hooks_path = self.root / ".codex" / "hooks.json"
+        hooks_path.parent.mkdir()
+        hooks_path.write_text('{"hooks": {"PreToolUse": {}}}', encoding="utf-8")
+        with self.assertRaisesRegex(PolicyError, "Codex hooks hooks.PreToolUse"):
+            self.install(codex=True)
+        self.assertEqual(hooks_path.read_text(encoding="utf-8"), '{"hooks": {"PreToolUse": {}}}')
+        self.assertFalse(self.manifest_path.exists())
+
+    def test_claude_and_codex_hooks_can_be_installed_together(self):
+        self.assertEqual(main(["--project", str(self.root), "--agent-hook", "claude",
+                               "--agent-hook", "codex"]), 0)
+        manifest = json.loads(self.manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(Path(manifest["claude_hook"]["path"]), Path(".claude") / "settings.json")
+        self.assertEqual(Path(manifest["codex_hook"]["path"]), Path(".codex") / "hooks.json")
+        _uninstall(self.root)
+        self.assertFalse((self.root / ".claude" / "settings.json").exists())
+        self.assertFalse((self.root / ".codex" / "hooks.json").exists())
+
+    def test_uninstall_refuses_an_edited_codex_hook_without_partial_removal(self):
+        self.install(codex=True)
+        hooks_path = self.root / ".codex" / "hooks.json"
+        config = json.loads(hooks_path.read_text(encoding="utf-8"))
+        config["hooks"]["PreToolUse"][0]["hooks"][0]["statusMessage"] = "User edit"
+        hooks_path.write_text(json.dumps(config), encoding="utf-8")
+        with self.assertRaisesRegex(PolicyError, "managed Codex hook was edited or removed"):
+            _uninstall(self.root)
+        self.assertTrue((self.root / "policy" / "shared.json").is_file())
+        self.assertTrue(self.manifest_path.is_file())
+        self.assertEqual(json.loads(hooks_path.read_text(encoding="utf-8")), config)
 
     def test_user_preexisting_agent_reference_is_not_removed_on_uninstall(self):
         from install import _block

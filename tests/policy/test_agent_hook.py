@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT / "scripts" / "policy"))
 from agent_hook import handle_input
 
 
-class ClaudePreToolUseTest(unittest.TestCase):
+class AgentPreToolUseTest(unittest.TestCase):
     def setUp(self):
         if not shutil.which("git"):
             self.skipTest("Git is required for agent-hook integration tests")
@@ -37,10 +37,11 @@ class ClaudePreToolUseTest(unittest.TestCase):
         return subprocess.run(["git", *args], cwd=self.root, text=True,
                               encoding="utf-8", capture_output=True, check=True)
 
-    def request(self, command, *, tool="Bash", cwd=None):
+    def request(self, command, *, tool="Bash", cwd=None, codex=False):
         payload = {"tool_name": tool, "tool_input": {"command": command, "timeout": 5},
-                   "cwd": str(cwd or self.root), "session_id": "test-session"}
-        return payload, handle_input(payload)
+                   "cwd": str(cwd or self.root), "session_id": "test-session",
+                   "hook_event_name": "PreToolUse"}
+        return payload, handle_input(payload, codex=codex)
 
     def test_unrelated_tools_and_commands_pass_through(self):
         outside = self.root.parent
@@ -95,6 +96,14 @@ class ClaudePreToolUseTest(unittest.TestCase):
         self.assertEqual(body, "本文\n\nSee #999\n\nRefs #123")
         self.assertIn("--draft", updated)
 
+    def test_codex_rewrite_decision_allows_the_updated_tool_input(self):
+        command = 'gh pr create --title "feat(implement-feature): 機能を追加" --body "本文"'
+        response, reason = self.request(command, codex=True)[1]
+        self.assertIsNone(reason)
+        output = response["hookSpecificOutput"]
+        self.assertEqual(output["permissionDecision"], "allow")
+        self.assertIn("(#123)", output["updatedInput"]["command"])
+
     def test_matching_issue_references_are_idempotent(self):
         command = 'gh pr create --title "feat: summary (#123)" --body "Refs #123"'
         self.assertEqual(self.request(command)[1], (None, None))
@@ -139,7 +148,7 @@ class ClaudePreToolUseTest(unittest.TestCase):
     def test_invalid_tool_input_is_left_alone_for_non_target_command(self):
         self.assertEqual(handle_input({"tool_name": "Bash", "tool_input": {"command": "ls"}}), (None, None))
 
-    def test_main_emits_valid_claude_json_and_no_diagnostic_stdout(self):
+    def test_main_emits_valid_pre_tool_use_json_and_no_diagnostic_stdout(self):
         script = self.root / "scripts" / "policy" / "agent_hook.py"
         request = {"tool_name": "Bash", "tool_input": {"command": "git switch -c invalid"},
                    "cwd": str(self.root)}
@@ -147,6 +156,18 @@ class ClaudePreToolUseTest(unittest.TestCase):
                                 text=True, encoding="utf-8", capture_output=True)
         self.assertEqual(result.returncode, 0)
         self.assertEqual(json.loads(result.stdout)["hookSpecificOutput"]["permissionDecision"], "deny")
+
+    def test_main_emits_codex_allow_decision_for_rewritten_input(self):
+        script = self.root / "scripts" / "policy" / "agent_hook.py"
+        request = {"tool_name": "Bash", "tool_input": {"command":
+                   'gh pr create --title "feat(implement-feature): 機能を追加" --body "本文"'},
+                   "cwd": str(self.root), "hook_event_name": "PreToolUse"}
+        result = subprocess.run([sys.executable, "-B", str(script), "--codex"],
+                                input=json.dumps(request), text=True, encoding="utf-8", capture_output=True)
+        self.assertEqual(result.returncode, 0)
+        response = json.loads(result.stdout)["hookSpecificOutput"]
+        self.assertEqual(response["permissionDecision"], "allow")
+        self.assertIn("(#123)", response["updatedInput"]["command"])
 
 
 if __name__ == "__main__":

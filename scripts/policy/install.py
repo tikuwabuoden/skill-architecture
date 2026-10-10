@@ -23,7 +23,13 @@ MANIFEST_NAME = "skill-architecture-policy.json"
 START = "<!-- skill-architecture naming policy: start -->"
 END = "<!-- skill-architecture naming policy: end -->"
 REFERENCE = "詳しいコミット・PR・ブランチの命名規約は[policy/NAMING.md](policy/NAMING.md)を参照する。"
-AGENT_HOOK_COMMAND = 'sh "${CLAUDE_PROJECT_DIR}/scripts/policy/agent-hook.sh"'
+CLAUDE_HOOK_COMMAND = 'sh "${CLAUDE_PROJECT_DIR}/scripts/policy/agent-hook.sh"'
+CODEX_HOOK_COMMAND = 'python3 -B "$(git rev-parse --show-toplevel)/scripts/policy/agent_hook.py" --codex'
+CODEX_HOOK_COMMAND_WINDOWS = (
+    'powershell.exe -NoProfile -Command "if (Get-Command python -ErrorAction SilentlyContinue) '
+    '{ python -B (Join-Path (git rev-parse --show-toplevel) \'scripts/policy/agent_hook.py\') --codex } '
+    'else { py -3 -B (Join-Path (git rev-parse --show-toplevel) \'scripts/policy/agent_hook.py\') --codex }"'
+)
 MANAGED_FILES = (
     "policy/shared.json", "policy/local.example.json", "policy/README.md",
     "scripts/policy/policy.py", "scripts/policy/rules.py", "scripts/policy/generate_docs.py",
@@ -184,8 +190,9 @@ def _agent_removal(original: bytes, record: dict) -> bytes:
 
 
 def _settings_bytes(original: bytes | None, entry: dict, operation: str,
-                    *, installed: bool = False) -> tuple[bytes | None, bool, bool]:
-    created = original is None
+                    *, installed: bool = False,
+                    created_file: bool | None = None) -> tuple[bytes | None, bool, bool]:
+    created = original is None if created_file is None else created_file
     settings = {} if original is None else _read_json_bytes(original, "Claude settings")
     hooks = settings.get("hooks", {})
     if not isinstance(hooks, dict):
@@ -199,7 +206,7 @@ def _settings_bytes(original: bytes | None, entry: dict, operation: str,
             raise PolicyError(f"Claude settings hooks.PreToolUse[{index}] is malformed; preserving settings")
     if operation == "install":
         exact = [group for group in pre_tool if isinstance(group, dict) and
-                 any(isinstance(hook, dict) and hook.get("command") == AGENT_HOOK_COMMAND
+                 any(isinstance(hook, dict) and hook.get("command") == CLAUDE_HOOK_COMMAND
                      for hook in group.get("hooks", []))]
         if exact:
             if entry in exact:
@@ -249,9 +256,69 @@ def _read_json_bytes(content: bytes, label: str) -> dict:
 
 def _agent_entry() -> dict:
     return {"matcher": "Bash", "hooks": [{
-        "type": "command", "command": AGENT_HOOK_COMMAND,
+        "type": "command", "command": CLAUDE_HOOK_COMMAND,
         "timeout": 10, "onFailure": "block",
     }]}
+
+
+def _codex_agent_entry() -> dict:
+    return {"matcher": "^Bash$", "hooks": [{
+        "type": "command", "command": CODEX_HOOK_COMMAND,
+        "commandWindows": CODEX_HOOK_COMMAND_WINDOWS,
+        "timeout": 10, "statusMessage": "Checking naming policy",
+    }]}
+
+
+def _codex_hooks_bytes(original: bytes | None, entry: dict, operation: str,
+                       *, installed: bool = False,
+                       created_file: bool | None = None) -> tuple[bytes | None, bool, bool]:
+    created = original is None if created_file is None else created_file
+    settings = {} if original is None else _read_json_bytes(original, "Codex hooks")
+    hooks = settings.get("hooks", {})
+    if not isinstance(hooks, dict):
+        raise PolicyError("Codex hooks hooks must be an object")
+    pre_tool = hooks.get("PreToolUse", [])
+    if not isinstance(pre_tool, list):
+        raise PolicyError("Codex hooks hooks.PreToolUse must be an array")
+    for index, group in enumerate(pre_tool):
+        if (not isinstance(group, dict) or not isinstance(group.get("hooks", []), list) or
+                any(not isinstance(hook, dict) for hook in group.get("hooks", []))):
+            raise PolicyError(f"Codex hooks PreToolUse[{index}] is malformed; preserving settings")
+    if operation == "install":
+        exact = [group for group in pre_tool if isinstance(group, dict) and
+                 any(isinstance(hook, dict) and
+                     (hook.get("command") == CODEX_HOOK_COMMAND or
+                      hook.get("commandWindows") == CODEX_HOOK_COMMAND_WINDOWS)
+                     for hook in group.get("hooks", []))]
+        if exact:
+            if entry in exact:
+                return original, False, created
+            raise PolicyError("Codex hooks already contain a different policy hook; preserving settings")
+        pre_tool.append(entry)
+        hooks["PreToolUse"] = pre_tool
+        settings["hooks"] = hooks
+        return _dump_settings(settings, original), True, created
+    if not installed:
+        return original, False, created
+    found = False
+    filtered = []
+    for group in pre_tool:
+        if group == entry:
+            found = True
+            continue
+        filtered.append(group)
+    if not found:
+        raise PolicyError("managed Codex hook was edited or removed; preserving installed files")
+    hooks["PreToolUse"] = filtered
+    if not filtered:
+        hooks.pop("PreToolUse", None)
+    if not hooks:
+        settings.pop("hooks", None)
+    else:
+        settings["hooks"] = hooks
+    if not settings and created:
+        return None, True, created
+    return _dump_settings(settings, original), True, created
 
 
 def _load_manifest(path: Path) -> dict | None:
@@ -263,7 +330,7 @@ def _load_manifest(path: Path) -> dict | None:
     return manifest
 
 
-def _install(root: Path, source: Path, *, claude: bool) -> None:
+def _install(root: Path, source: Path, *, claude: bool, codex: bool = False) -> None:
     git_dir = _git_path(root, "--git-dir")
     manifest_path = git_dir / MANIFEST_NAME
     _assert_managed_path(manifest_path, (root, git_dir))
@@ -352,6 +419,7 @@ def _install(root: Path, source: Path, *, claude: bool) -> None:
                        "wrapper_sha256": _sha(hook_content)}
 
     agent_record_new = None if previous is None else previous.get("claude_hook")
+    codex_record_new = None if previous is None else previous.get("codex_hook")
     if claude:
         entry = _agent_entry()
         settings_path = root / ".claude" / "settings.json"
@@ -363,12 +431,26 @@ def _install(root: Path, source: Path, *, claude: bool) -> None:
         if settings_content != settings_original:
             plans[settings_path] = (settings_content, 0o644)
         agent_record_new = {"path": str(settings_path.relative_to(root)), "entry": entry,
-                            "installed": did_install or installed, "created_file": created}
+                            "installed": did_install or installed,
+                            "created_file": created or bool(agent_record_new and agent_record_new.get("created_file"))}
+    if codex:
+        entry = _codex_agent_entry()
+        hooks_path = root / ".codex" / "hooks.json"
+        _assert_managed_path(hooks_path, roots)
+        hooks_original = hooks_path.read_bytes() if hooks_path.exists() else None
+        installed = False if codex_record_new is None else codex_record_new["installed"]
+        hooks_content, did_install, created = _codex_hooks_bytes(
+            hooks_original, entry, "install", installed=installed)
+        if hooks_content != hooks_original:
+            plans[hooks_path] = (hooks_content, 0o644)
+        codex_record_new = {"path": str(hooks_path.relative_to(root)), "entry": entry,
+                            "installed": did_install or installed,
+                            "created_file": created or bool(codex_record_new and codex_record_new.get("created_file"))}
 
     new_manifest = {
         "format_version": 1, "files": new_files, "seeded_files": seeded,
         "agents_reference": agents_new_record, "git_hook": new_hook_record,
-        "claude_hook": agent_record_new,
+        "claude_hook": agent_record_new, "codex_hook": codex_record_new,
     }
     manifest_content = (json.dumps(new_manifest, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
     plans[manifest_path] = (manifest_content, 0o600)
@@ -378,6 +460,8 @@ def _install(root: Path, source: Path, *, claude: bool) -> None:
     print("Preserved local policy configuration in policy/local.json")
     if claude:
         print("Installed optional Claude Code PreToolUse hook")
+    if codex:
+        print("Installed optional Codex PreToolUse hook")
 
 
 def _uninstall(root: Path) -> None:
@@ -436,12 +520,28 @@ def _uninstall(root: Path) -> None:
         _assert_managed_path(settings_path, roots)
         if settings_path.exists():
             settings_content, _, _ = _settings_bytes(
-                settings_path.read_bytes(), agent["entry"], "uninstall", installed=agent["installed"])
+                settings_path.read_bytes(), agent["entry"], "uninstall",
+                installed=agent["installed"], created_file=agent.get("created_file", False))
             if settings_content != settings_path.read_bytes():
                 if settings_content is None and agent.get("created_file"):
                     changes.append((settings_path, None, None))
                 elif settings_content is not None:
                     changes.append((settings_path, settings_content, stat.S_IMODE(settings_path.stat().st_mode)))
+
+    codex_agent = manifest.get("codex_hook")
+    if codex_agent:
+        hooks_path = root / Path(codex_agent["path"])
+        _assert_managed_path(hooks_path, roots)
+        if hooks_path.exists():
+            hooks_content, _, _ = _codex_hooks_bytes(
+                hooks_path.read_bytes(), codex_agent["entry"], "uninstall",
+                installed=codex_agent["installed"],
+                created_file=codex_agent.get("created_file", False))
+            if hooks_content != hooks_path.read_bytes():
+                if hooks_content is None and codex_agent.get("created_file"):
+                    changes.append((hooks_path, None, None))
+                elif hooks_content is not None:
+                    changes.append((hooks_path, hooks_content, stat.S_IMODE(hooks_path.stat().st_mode)))
 
     changes.append((manifest_path, None, None))
     _apply_changes(changes, roots)
@@ -453,7 +553,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project", type=Path, default=Path.cwd(), help="target Git repository")
     parser.add_argument("--uninstall", action="store_true")
-    parser.add_argument("--agent-hook", choices=("claude",), help="optionally install the Claude Code hook")
+    parser.add_argument("--agent-hook", choices=("claude", "codex"), action="append",
+                        help="optionally install an agent PreToolUse hook; repeat to install both")
     args = parser.parse_args(argv)
     try:
         root = repository_root(args.project.resolve())
@@ -463,7 +564,9 @@ def main(argv: list[str] | None = None) -> int:
                 raise PolicyError("--agent-hook cannot be combined with --uninstall")
             _uninstall(root)
         else:
-            _install(root, source, claude=args.agent_hook == "claude")
+            selected_hooks = set(args.agent_hook or ())
+            _install(root, source, claude="claude" in selected_hooks,
+                     codex="codex" in selected_hooks)
     except (PolicyError, OSError, UnicodeError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

@@ -1,7 +1,8 @@
-"""Claude Code PreToolUse adapter for the documented initial Bash command set."""
+"""Claude Code and Codex PreToolUse adapter for the documented Bash commands."""
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 from pathlib import Path
@@ -160,8 +161,8 @@ def _gh_pr(tokens: list[str], policy: dict, cwd: Path) -> tuple[bool, bool]:
     return True, title != values["title"][2] or updated_body != original_body
 
 
-def handle_input(payload: object) -> tuple[dict | None, str | None]:
-    """Return a Claude PreToolUse response and a diagnostic, if one is needed."""
+def handle_input(payload: object, *, codex: bool = False) -> tuple[dict | None, str | None]:
+    """Return a PreToolUse response and a diagnostic, if one is needed."""
     if not isinstance(payload, dict) or payload.get("tool_name") != "Bash":
         return None, None
     tool_input = payload.get("tool_input")
@@ -195,9 +196,10 @@ def handle_input(payload: object) -> tuple[dict | None, str | None]:
         if is_pr and changed:
             updated = dict(tool_input)
             updated["command"] = shlex.join(tokens)
-            return {"hookSpecificOutput": {
-                "hookEventName": "PreToolUse", "updatedInput": updated,
-            }}, None
+            hook_output = {"hookEventName": "PreToolUse", "updatedInput": updated}
+            if codex:
+                hook_output["permissionDecision"] = "allow"
+            return {"hookSpecificOutput": hook_output}, None
         return None, None
     except (PolicyError, OSError, ValueError) as exc:
         return {"hookSpecificOutput": {
@@ -216,18 +218,22 @@ def _is_pr_target(tokens: list[str]) -> bool:
     return len(tokens) >= 3 and _executable(tokens[0], "gh") and tokens[1:3] == ["pr", "create"]
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--codex", action="store_true", help="emit Codex PreToolUse decisions")
+    args = parser.parse_args(argv)
     try:
         payload = json.loads(sys.stdin.buffer.read().decode("utf-8"))
     except (UnicodeError, json.JSONDecodeError) as exc:
-        print(json.dumps({"hookSpecificOutput": {
+        response = {"hookSpecificOutput": {
             "hookEventName": "PreToolUse", "permissionDecision": "deny",
             "permissionDecisionReason": f"invalid hook JSON: {exc}",
-        }}))
+        }}
+        sys.stdout.buffer.write((json.dumps(response) + "\n").encode("utf-8"))
         return 0
-    response, diagnostic = handle_input(payload)
+    response, diagnostic = handle_input(payload, codex=args.codex)
     if response is not None:
-        print(json.dumps(response, ensure_ascii=False))
+        sys.stdout.buffer.write((json.dumps(response, ensure_ascii=False) + "\n").encode("utf-8"))
     return 0
 
 
