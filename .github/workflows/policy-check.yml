@@ -16,13 +16,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-          persist-credentials: true
-      - name: Fetch pull request base and clear checkout credentials
-        env:
-          POLICY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          git fetch --no-tags origin "$POLICY_BASE_SHA"
-          git config --local --unset-all http.https://github.com/.extraheader
+          persist-credentials: false
       - name: Validate pull request and commits
         env:
           POLICY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
