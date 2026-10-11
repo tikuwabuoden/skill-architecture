@@ -47,6 +47,15 @@ def validate_branch(name: str, policy: dict, *, allow_permanent: bool = True):
     return match
 
 
+def extract_branch_issue(name: str, policy: dict) -> str | None:
+    """Read an issue from the configured branch format without rejecting other names."""
+    if name in policy["permanent_branches"]:
+        return None
+    match = compile_pattern(policy["branch_pattern"],
+                            [entry["name"] for entry in policy["types"]]).fullmatch(name)
+    return match.group("issue") if match is not None else None
+
+
 def validate_subject(subject: str, policy: dict) -> SubjectMatch:
     """Validate the syntax and configured scope rules for one subject line."""
     if "\n" in subject or "\r" in subject:

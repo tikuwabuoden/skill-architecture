@@ -9,7 +9,7 @@ import copy
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts" / "policy"))
 from policy import PolicyError, load_policy
-from rules import complete_commit_message, complete_pr_body, complete_subject, validate_branch, validate_subject
+from rules import complete_commit_message, complete_pr_body, complete_subject, extract_branch_issue, validate_branch, validate_subject
 
 
 POLICY = load_policy(ROOT / "policy" / "shared.json", ROOT / "policy" / "local.json")
@@ -71,6 +71,24 @@ class NamingRulesTest(unittest.TestCase):
     def test_branch_exception_can_be_disabled_for_source_branches(self):
         with self.assertRaises(PolicyError):
             validate_branch("main", POLICY, allow_permanent=False)
+
+    def test_issue_extraction_does_not_validate_unrecognized_branch_names(self):
+        self.assertEqual(extract_branch_issue("feat/123-add-login", POLICY), "123")
+        for branch in ("main", "chore/no-issue-update-dependencies",
+                       "feature/3-install-shared-policy", "feat/0-add-login", "feat/123-Add-login"):
+            with self.subTest(branch=branch):
+                self.assertIsNone(extract_branch_issue(branch, POLICY))
+
+    def test_issue_extraction_uses_the_configured_branch_format(self):
+        policy = copy.deepcopy(POLICY)
+        policy["branch_pattern"] = policy["branch_pattern"].replace("/", "__")
+        self.assertEqual(extract_branch_issue("feat__123-add-login", policy), "123")
+        self.assertIsNone(extract_branch_issue("feat/123-add-login", policy))
+
+    def test_issue_extraction_respects_permanent_branch_exceptions(self):
+        policy = copy.deepcopy(POLICY)
+        policy["permanent_branches"].append("feat/123-add-login")
+        self.assertIsNone(extract_branch_issue("feat/123-add-login", policy))
 
     def test_subject_completion_and_rerun_are_idempotent(self):
         subject = "feat(implement-feature): 機能を追加"

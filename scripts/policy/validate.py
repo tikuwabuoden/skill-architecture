@@ -11,14 +11,15 @@ import sys
 
 from hooks import load_repository_policy, repository_root
 from policy import PolicyError
-from rules import complete_pr_body, complete_subject, validate_branch, validate_subject
+from rules import complete_pr_body, complete_subject, extract_branch_issue, validate_branch, validate_subject
 
 
 def validate_pull_request(title: str, body: str, branch_name: str, policy: dict) -> None:
     """Validate PR fields against policy and its source branch; never mutate them."""
-    branch = validate_branch(branch_name, policy)
+    if not branch_name:
+        raise PolicyError("PR source branch is unavailable")
+    branch_issue = extract_branch_issue(branch_name, policy)
     match = validate_subject(title, policy)
-    branch_issue = branch.group("issue") if branch is not None else None
     title_issue = match.group("issue")
     if branch_issue is not None and title_issue != branch_issue:
         if title_issue is None:

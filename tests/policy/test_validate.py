@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -36,9 +37,18 @@ class PullRequestValidationTest(unittest.TestCase):
         validate_pull_request("chore: update", "Refs #99", "chore/no-issue-update-dependencies", POLICY)
         validate_pull_request("docs: update", "", "main", POLICY)
 
-    def test_pr_checks_the_branch_name_but_does_not_replace_other_body_references(self):
-        with self.assertRaisesRegex(PolicyError, "invalid branch name"):
-            validate_pull_request("feat: x", "", "feature/x", POLICY)
+    def test_pr_does_not_reject_branches_outside_the_naming_convention(self):
+        for branch in ("feature/3-install-shared-policy", "feature/x", "feat/123-Add-feature"):
+            with self.subTest(branch=branch):
+                validate_pull_request("feat: x", "", branch, POLICY)
+                with self.assertRaisesRegex(PolicyError, "invalid subject"):
+                    validate_pull_request("invalid", "", branch, POLICY)
+
+    def test_pr_requires_the_source_branch_to_be_available(self):
+        with self.assertRaisesRegex(PolicyError, "source branch is unavailable"):
+            validate_pull_request("feat: x", "", "", POLICY)
+
+    def test_pr_does_not_replace_other_body_references(self):
         validate_pull_request("feat(implement-feature): x (#123)",
                               "Refs #99\n\nRefs #123\n", "feat/123-add-feature", POLICY)
 
@@ -81,6 +91,37 @@ class CommitRangeValidationTest(unittest.TestCase):
         head = self.git("rev-parse", "HEAD").stdout.strip()
         self.assertEqual(validate_commit_range(self.root, self.base, head,
                                                load_repository_policy(self.root)), 2)
+
+    def test_ci_cli_accepts_nonconforming_branch_and_still_validates_pr_and_commits(self):
+        self.git("switch", "-c", "feature/3-install-shared-policy")
+        self.commit("feat: add feature")
+        environment = os.environ.copy()
+        environment.update({
+            "POLICY_PR_BRANCH": "feature/3-install-shared-policy",
+            "POLICY_PR_TITLE": "feat: add feature",
+            "POLICY_PR_BODY": "",
+            "POLICY_BASE_SHA": self.base,
+            "POLICY_HEAD_SHA": self.git("rev-parse", "HEAD").stdout.strip(),
+        })
+        command = [sys.executable, "-B", str(ROOT / "scripts" / "policy" / "validate.py"), "pull-request"]
+        result = subprocess.run(command, cwd=self.root, env=environment,
+                                text=True, encoding="utf-8", capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Validated PR metadata and 1 commit(s).", result.stdout)
+
+        environment["POLICY_PR_TITLE"] = "invalid"
+        result = subprocess.run(command, cwd=self.root, env=environment,
+                                text=True, encoding="utf-8", capture_output=True)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("invalid subject", result.stderr)
+
+        environment["POLICY_PR_TITLE"] = "feat: add feature"
+        self.commit("not conventional")
+        environment["POLICY_HEAD_SHA"] = self.git("rev-parse", "HEAD").stdout.strip()
+        result = subprocess.run(command, cwd=self.root, env=environment,
+                                text=True, encoding="utf-8", capture_output=True)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("invalid subject", result.stderr)
 
     def test_invalid_commit_is_rejected_with_its_position(self):
         self.git("switch", "-c", "chore/no-issue-changes")
