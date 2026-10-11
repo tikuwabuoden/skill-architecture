@@ -2,10 +2,10 @@
   "schema_version": 1,
   "scope": {
     "allowed": [
-      "explain-implementation", "fix-bug", "implement-feature",
-      "analyze-codebase", "assess-change-impact", "implement-code-change",
+      "create-github-issue", "explain-implementation", "fix-bug", "implement-feature",
+      "analyze-codebase", "assess-change-impact", "draft-issue", "implement-code-change",
       "plan-code-change", "render-markdown", "verify-code-change",
-      "render-archify-diagram"
+      "github-issues-gh", "render-archify-diagram"
     ]
   },
   "guidance": [

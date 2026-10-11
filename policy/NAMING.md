@@ -26,7 +26,7 @@
 
 ### scope
 
-- 許可一覧: `explain-implementation`、`fix-bug`、`implement-feature`、`analyze-codebase`、`assess-change-impact`、`implement-code-change`、`plan-code-change`、`render-markdown`、`verify-code-change`、`render-archify-diagram`
+- 許可一覧: `create-github-issue`、`explain-implementation`、`fix-bug`、`implement-feature`、`analyze-codebase`、`assess-change-impact`、`draft-issue`、`implement-code-change`、`plan-code-change`、`render-markdown`、`verify-code-change`、`github-issues-gh`、`render-archify-diagram`
 - 必須条件: 省略可能
 
 ## ブランチ名

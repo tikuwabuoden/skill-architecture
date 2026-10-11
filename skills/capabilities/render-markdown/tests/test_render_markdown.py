@@ -56,8 +56,6 @@ class RenderMarkdownTest(unittest.TestCase):
         output: str = "result.md",
         overwrite: bool = False,
     ) -> tuple[subprocess.CompletedProcess[bytes], Path]:
-        data_path = self.root / "data.json"
-        data_path.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
         output_path = self.root / output if output != "-" else Path("-")
         command = [
             sys.executable,
@@ -67,13 +65,19 @@ class RenderMarkdownTest(unittest.TestCase):
             "--template",
             str(template or self.template),
             "--data",
-            str(data_path),
+            "-",
             "--output",
             str(output_path),
         ]
         if overwrite:
             command.append("--overwrite")
-        return subprocess.run(command, capture_output=True, check=False), output_path
+        return subprocess.run(
+            command,
+            input=json.dumps(document, ensure_ascii=False).encode("utf-8"),
+            capture_output=True,
+            check=False,
+            cwd=self.root,
+        ), output_path
 
     def test_renders_generic_template_blocks(self) -> None:
         result, output_path = self.run_renderer(
@@ -172,9 +176,7 @@ class RenderMarkdownTest(unittest.TestCase):
         self.assertFalse(output_path.exists())
 
     def test_rejects_duplicate_json_keys(self) -> None:
-        data_path = self.root / "data.json"
         output_path = self.root / "result.md"
-        data_path.write_text('{"title":"a","title":"b"}', encoding="utf-8")
         result = subprocess.run(
             [
                 sys.executable,
@@ -184,10 +186,11 @@ class RenderMarkdownTest(unittest.TestCase):
                 "--template",
                 str(self.template),
                 "--data",
-                str(data_path),
+                "-",
                 "--output",
                 str(output_path),
             ],
+            input=b'{"title":"a","title":"b"}',
             capture_output=True,
             check=False,
         )
@@ -195,6 +198,32 @@ class RenderMarkdownTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("duplicate JSON key: title", result.stderr.decode("utf-8"))
         self.assertFalse(output_path.exists())
+
+    def test_rejects_file_input(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable, str(SCRIPT),
+                "--schema", str(self.schema),
+                "--template", str(self.template),
+                "--data", str(self.root / "data.json"),
+                "--output", str(self.root / "result.md"),
+            ],
+            capture_output=True,
+            check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("invalid choice", result.stderr.decode("utf-8"))
+        self.assertEqual(set(self.root.iterdir()), {self.schema, self.template})
+
+    def test_leaves_no_intermediate_files_on_success_or_failure(self) -> None:
+        for document in (
+            {"title": "更新情報", "items": [], "note": None},
+            {"title": "更新情報"},
+        ):
+            with self.subTest(document=document):
+                result, _ = self.run_renderer(document, output="-")
+                self.assertEqual(result.returncode == 0, "items" in document)
+                self.assertEqual(set(self.root.iterdir()), {self.schema, self.template})
 
     def test_refuses_to_replace_existing_output_without_flag(self) -> None:
         document = {"title": "更新情報", "items": [], "note": None}
