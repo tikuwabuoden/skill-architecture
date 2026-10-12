@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "scope": {
+    "allowed": [
+      "create-github-issue", "explain-implementation", "fix-bug", "implement-feature",
+      "analyze-codebase", "assess-change-impact", "draft-issue", "implement-code-change",
+      "plan-code-change", "render-markdown", "verify-code-change",
+      "github-issues-gh", "render-archify-diagram"
+    ]
+  },
+  "guidance": [
+    "単一のSkillを変更する場合は、Skillディレクトリ名をそのままscopeに使う。",
+    "新しいSkillを追加する場合も、そのSkill名をscopeに使い、利用先設定の許可一覧へ追加する。",
+    "複数のSkillにまたがる変更ではscopeを省略する。",
+    "READMEやアーキテクチャなど、リポジトリ全体の文書変更ではscopeを省略する。",
+    "workflow、capability、adapterなどの分類名をscopeに使わない。",
+    "適切なscopeを一意に決められない場合は省略する。",
+    "定義されていないscope体系を推測で追加しない。",
+    "1コミットには1つの論理的な変更だけを含める。"
+  ]
+}

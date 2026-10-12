@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "types": [
+    {"name": "feat", "description": "機能の追加または変更"},
+    {"name": "fix", "description": "不具合の修正"},
+    {"name": "docs", "description": "ドキュメントのみの変更"},
+    {"name": "refactor", "description": "振る舞いを変えない内部構造の変更"},
+    {"name": "test", "description": "テストの追加または変更"},
+    {"name": "chore", "description": "上記に該当しない保守作業"}
+  ],
+  "subject_pattern": "^(?P<type>{types})(?:\\((?P<scope>[^()\\s:!]+)\\))?(?P<breaking>!)?: (?P<summary>\\S(?:[^\\r\\n]*?\\S)?)(?: \\(#(?P<issue>[1-9][0-9]*)\\))?$",
+  "branch_pattern": "^(?P<type>{types})/(?:(?P<issue>[1-9][0-9]*)|(?P<no_issue>no-issue))-(?P<description>[a-z0-9]+(?:-[a-z0-9]+)*)$",
+  "issue_reference": {
+    "subject_suffix": " (#{issue})",
+    "pr_body_line": "Refs #{issue}"
+  },
+  "summary_forbidden_endings": ["。", ".", "．"],
+  "defaults": {
+    "scope": {"allowed": null, "required": false, "required_for_types": []},
+    "permanent_branches": ["main", "master"]
+  }
+}

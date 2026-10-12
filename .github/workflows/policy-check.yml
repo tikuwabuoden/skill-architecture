@@ -1,0 +1,27 @@
+name: Naming policy
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  naming:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate pull request and commits
+        env:
+          POLICY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          POLICY_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          POLICY_PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          POLICY_PR_TITLE: ${{ github.event.pull_request.title }}
+          POLICY_PR_BODY: ${{ github.event.pull_request.body }}
+        run: python scripts/policy/validate.py pull-request

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "scope": {
+    "allowed": ["auth", "api", "ui"],
+    "required": false,
+    "required_for_types": ["feat", "fix"]
+  },
+  "permanent_branches": ["main", "develop"],
+  "guidance": ["scopeは変更の主な責務に合わせて選ぶ。"]
+}
